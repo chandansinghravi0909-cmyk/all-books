@@ -1,0 +1,254 @@
+{
+  "entities": {
+    "Notebook": {
+      "title": "Notebook",
+      "description": "Independent personal notebook in the library (13 built-in + custom user notebooks).",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Owner Firebase Auth UID." },
+        "notebookNumber": { "type": "integer", "description": "Display index (1..N)." },
+        "name": { "type": "string", "description": "Notebook title." },
+        "purpose": { "type": "string", "description": "Short purpose statement." },
+        "shortDescription": { "type": "string", "description": "Short summary shown on dashboard cards." },
+        "detailedDescription": { "type": "string", "description": "Detailed description shown on Notebook Home." },
+        "iconKey": { "type": "string", "description": "Material icon identifier." },
+        "coverColorHex": { "type": "integer", "description": "ARGB cover color stored as 64-bit integer." },
+        "coverStyle": { "type": "string", "enum": ["LEATHER", "LINEN", "SPIRAL", "MINIMAL", "CLASSIC"] },
+        "sortOrder": { "type": "integer", "description": "Dashboard ordering index." },
+        "pinned": { "type": "boolean" },
+        "archived": { "type": "boolean" },
+        "hidden": { "type": "boolean" },
+        "systemDefault": { "type": "boolean" },
+        "notebookType": { "type": "string", "description": "Specialized notebook type key." },
+        "lastOpenedAt": { "type": "string", "format": "date-time", "description": "Server timestamp of last open." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": ["userId", "notebookNumber", "name", "purpose", "shortDescription", "detailedDescription", "iconKey", "coverColorHex", "coverStyle", "sortOrder", "pinned", "archived", "hidden", "systemDefault", "notebookType", "createdAt", "updatedAt"]
+    },
+    "Topic": {
+      "title": "Topic",
+      "description": "Topic inside a specific notebook with structured information and separate personal/AI notes.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "notebookId": { "type": "string" },
+        "name": { "type": "string" },
+        "shortDescription": { "type": "string" },
+        "purpose": { "type": "string" },
+        "introduction": { "type": "string" },
+        "coversItems": { "type": "string", "description": "List of covered sub-areas (stored as Firestore array)." },
+        "importantConcepts": { "type": "string", "description": "List of key concepts (stored as Firestore array)." },
+        "relatedTopics": { "type": "string", "description": "List of related topics (stored as Firestore array)." },
+        "personalNotes": { "type": "string" },
+        "personalObservations": { "type": "string" },
+        "personalExamples": { "type": "string" },
+        "aiGeneratedInfo": { "type": "string" },
+        "referenceLinks": { "type": "string", "description": "List of reference URLs (stored as Firestore array)." },
+        "iconKey": { "type": "string" },
+        "sortOrder": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "notebookId", "name", "shortDescription", "purpose", "introduction", "coversItems", "importantConcepts", "relatedTopics", "personalNotes", "personalObservations", "personalExamples", "aiGeneratedInfo", "referenceLinks", "iconKey", "sortOrder", "createdAt", "updatedAt"]
+    },
+    "Subtopic": {
+      "title": "Subtopic",
+      "description": "Subtopic inside a topic with its own information page.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "notebookId": { "type": "string" },
+        "topicId": { "type": "string" },
+        "name": { "type": "string" },
+        "shortDescription": { "type": "string" },
+        "purpose": { "type": "string" },
+        "introduction": { "type": "string" },
+        "coversItems": { "type": "string" },
+        "importantConcepts": { "type": "string" },
+        "relatedTopics": { "type": "string" },
+        "personalNotes": { "type": "string" },
+        "aiGeneratedInfo": { "type": "string" },
+        "sortOrder": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "notebookId", "topicId", "name", "shortDescription", "purpose", "introduction", "coversItems", "importantConcepts", "relatedTopics", "personalNotes", "aiGeneratedInfo", "sortOrder", "createdAt", "updatedAt"]
+    },
+    "Page": {
+      "title": "Page",
+      "description": "A4 ruled notebook writing page belonging to a notebook and optionally a topic/subtopic.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "notebookId": { "type": "string" },
+        "topicId": { "type": "string" },
+        "subtopicId": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "pageNumber": { "type": "integer" },
+        "handwritingMode": { "type": "boolean" },
+        "fontKey": { "type": "string" },
+        "fontSizeSp": { "type": "integer" },
+        "inkColorHex": { "type": "integer" },
+        "lineSpacingMultiplier": { "type": "number" },
+        "textAlignment": { "type": "string", "enum": ["START", "CENTER", "END"] },
+        "bold": { "type": "boolean" },
+        "italic": { "type": "boolean" },
+        "paperColorKey": { "type": "string", "enum": ["IVORY", "CREAM", "WHITE", "SEPIA", "MINT"] },
+        "aiNotes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "notebookId", "title", "content", "pageNumber", "handwritingMode", "fontKey", "fontSizeSp", "inkColorHex", "lineSpacingMultiplier", "textAlignment", "bold", "italic", "paperColorKey", "aiNotes", "createdAt", "updatedAt"]
+    },
+    "Attachment": {
+      "title": "Attachment",
+      "description": "Saved work items, screenshots, gallery images, or reference attachments.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "notebookId": { "type": "string" },
+        "topicId": { "type": "string" },
+        "pageId": { "type": "string" },
+        "fileName": { "type": "string" },
+        "fileType": { "type": "string", "enum": ["IMAGE", "SCREENSHOT", "LINK", "DOCUMENT"] },
+        "localUriOrPath": { "type": "string" },
+        "caption": { "type": "string" },
+        "sourceLabel": { "type": "string" },
+        "status": { "type": "string", "enum": ["SAVED", "NOT_STARTED", "IN_PROGRESS", "COMPLETED"] },
+        "priority": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "notebookId", "fileName", "fileType", "localUriOrPath", "caption", "sourceLabel", "status", "priority", "createdAt", "updatedAt"]
+    },
+    "FitnessLog": {
+      "title": "FitnessLog",
+      "description": "Workout hypertrophy and strength tracking record.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "notebookId": { "type": "string" },
+        "exerciseName": { "type": "string" },
+        "muscleGroup": { "type": "string" },
+        "sets": { "type": "integer" },
+        "reps": { "type": "string" },
+        "weightKg": { "type": "number" },
+        "rir": { "type": "integer" },
+        "rpe": { "type": "number" },
+        "personalRecord": { "type": "boolean" },
+        "notes": { "type": "string" },
+        "workoutDateMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "notebookId", "exerciseName", "muscleGroup", "sets", "reps", "weightKg", "rir", "rpe", "personalRecord", "notes", "workoutDateMillis", "createdAt", "updatedAt"]
+    },
+    "VocabularyEntry": {
+      "title": "VocabularyEntry",
+      "description": "Structured English vocabulary record for Word Meanings notebook.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "notebookId": { "type": "string" },
+        "word": { "type": "string" },
+        "pronunciation": { "type": "string" },
+        "meaning": { "type": "string" },
+        "hindiMeaning": { "type": "string" },
+        "synonyms": { "type": "string" },
+        "antonyms": { "type": "string" },
+        "exampleSentences": { "type": "string" },
+        "category": { "type": "string" },
+        "mastered": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "notebookId", "word", "pronunciation", "meaning", "hindiMeaning", "synonyms", "antonyms", "exampleSentences", "category", "mastered", "createdAt", "updatedAt"]
+    },
+    "TodoTask": {
+      "title": "TodoTask",
+      "description": "Task entry for To Do notebook with priority, due date, and category.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "notebookId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string", "enum": ["TODAY", "TOMORROW", "UPCOMING", "PENDING", "IMPORTANT", "UNSCHEDULED"] },
+        "priority": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "URGENT"] },
+        "completed": { "type": "boolean" },
+        "dueDateMillis": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "notebookId", "title", "description", "category", "priority", "completed", "createdAt", "updatedAt"]
+    },
+    "AppPreferences": {
+      "title": "AppPreferences",
+      "description": "Persistent user customization and settings for theme, fonts, paper, dashboard, voice, and AI.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "customAppName": { "type": "string" },
+        "themeMode": { "type": "string", "enum": ["SYSTEM", "LIGHT", "DARK"] },
+        "accentColorKey": { "type": "string", "enum": ["FOREST", "COBALT", "TERRACOTTA", "AMBER", "PLUM", "SLATE"] },
+        "uiFontKey": { "type": "string" },
+        "writingFontKey": { "type": "string" },
+        "handwritingFontKey": { "type": "string" },
+        "defaultFontSizeSp": { "type": "integer" },
+        "paperColorKey": { "type": "string", "enum": ["IVORY", "CREAM", "WHITE", "SEPIA", "MINT"] },
+        "ruledLineColorKey": { "type": "string", "enum": ["BLUE", "TEAL", "SLATE", "SEPIA"] },
+        "lineSpacingMultiplier": { "type": "number" },
+        "defaultCoverStyle": { "type": "string", "enum": ["LEATHER", "LINEN", "SPIRAL", "MINIMAL", "CLASSIC"] },
+        "dashboardLayout": { "type": "string", "enum": ["GRID", "LIST"] },
+        "showArchivedOnDashboard": { "type": "boolean" },
+        "preferredLanguage": { "type": "string", "enum": ["ENGLISH", "HINDI", "MIXED"] },
+        "voiceInputLanguage": { "type": "string" },
+        "aiEnabled": { "type": "boolean" },
+        "aiResponseLanguage": { "type": "string", "enum": ["ENGLISH", "HINDI", "MIXED"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "customAppName", "themeMode", "accentColorKey", "uiFontKey", "writingFontKey", "handwritingFontKey", "defaultFontSizeSp", "paperColorKey", "ruledLineColorKey", "lineSpacingMultiplier", "defaultCoverStyle", "dashboardLayout", "showArchivedOnDashboard", "preferredLanguage", "voiceInputLanguage", "aiEnabled", "aiResponseLanguage", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/notebooks/{notebookId}": {
+      "schema": { "$ref": "#/entities/Notebook" },
+      "description": "User-private notebooks."
+    },
+    "/users/{userId}/topics/{topicId}": {
+      "schema": { "$ref": "#/entities/Topic" },
+      "description": "User-private topics belonging to notebooks."
+    },
+    "/users/{userId}/subtopics/{subtopicId}": {
+      "schema": { "$ref": "#/entities/Subtopic" },
+      "description": "User-private subtopics belonging to topics."
+    },
+    "/users/{userId}/pages/{pageId}": {
+      "schema": { "$ref": "#/entities/Page" },
+      "description": "User-private A4 notebook pages."
+    },
+    "/users/{userId}/attachments/{attachmentId}": {
+      "schema": { "$ref": "#/entities/Attachment" },
+      "description": "User-private saved work attachments and image references."
+    },
+    "/users/{userId}/fitnessLogs/{logId}": {
+      "schema": { "$ref": "#/entities/FitnessLog" },
+      "description": "User-private fitness workout tracking logs."
+    },
+    "/users/{userId}/vocabulary/{entryId}": {
+      "schema": { "$ref": "#/entities/VocabularyEntry" },
+      "description": "User-private vocabulary dictionary entries."
+    },
+    "/users/{userId}/todos/{todoId}": {
+      "schema": { "$ref": "#/entities/TodoTask" },
+      "description": "User-private to-do tasks."
+    },
+    "/users/{userId}/preferences/{prefId}": {
+      "schema": { "$ref": "#/entities/AppPreferences" },
+      "description": "User-private app customization and settings."
+    }
+  }
+}

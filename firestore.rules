@@ -1,0 +1,344 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidTimestampsOnCreate(data) {
+      return data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidTimestampsOnUpdate(data) {
+      return data.createdAt == existing().createdAt &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidStringList(val, maxItems) {
+      return val is list && val.size() <= maxItems && (val.size() == 0 || val[0] is string);
+    }
+
+    function isValidNotebook(data, userId) {
+      return data.userId == userId &&
+             data.notebookNumber is int && data.notebookNumber >= 1 && data.notebookNumber <= 9999 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 120 &&
+             data.purpose is string && data.purpose.size() <= 500 &&
+             data.shortDescription is string && data.shortDescription.size() <= 500 &&
+             data.detailedDescription is string && data.detailedDescription.size() <= 4000 &&
+             data.iconKey is string && data.iconKey.size() >= 1 && data.iconKey.size() <= 64 &&
+             data.coverColorHex is int &&
+             data.coverStyle in ['LEATHER', 'LINEN', 'SPIRAL', 'MINIMAL', 'CLASSIC'] &&
+             data.sortOrder is int && data.sortOrder >= 0 && data.sortOrder <= 9999 &&
+             data.pinned is bool &&
+             data.archived is bool &&
+             data.hidden is bool &&
+             data.systemDefault is bool &&
+             data.notebookType is string && data.notebookType.size() >= 1 && data.notebookType.size() <= 64 &&
+             (!('lastOpenedAt' in data) || (data.lastOpenedAt is timestamp && data.lastOpenedAt <= request.time));
+    }
+
+    function isValidTopic(data, userId) {
+      return data.userId == userId &&
+             data.notebookId is string && isValidId(data.notebookId) &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 160 &&
+             data.shortDescription is string && data.shortDescription.size() <= 500 &&
+             data.purpose is string && data.purpose.size() <= 1000 &&
+             data.introduction is string && data.introduction.size() <= 8000 &&
+             isValidStringList(data.coversItems, 60) &&
+             isValidStringList(data.importantConcepts, 60) &&
+             isValidStringList(data.relatedTopics, 40) &&
+             data.personalNotes is string && data.personalNotes.size() <= 50000 &&
+             data.personalObservations is string && data.personalObservations.size() <= 50000 &&
+             data.personalExamples is string && data.personalExamples.size() <= 50000 &&
+             data.aiGeneratedInfo is string && data.aiGeneratedInfo.size() <= 50000 &&
+             isValidStringList(data.referenceLinks, 30) &&
+             data.iconKey is string && data.iconKey.size() >= 1 && data.iconKey.size() <= 64 &&
+             data.sortOrder is int && data.sortOrder >= 0 && data.sortOrder <= 9999;
+    }
+
+    function isValidSubtopic(data, userId) {
+      return data.userId == userId &&
+             data.notebookId is string && isValidId(data.notebookId) &&
+             data.topicId is string && isValidId(data.topicId) &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 160 &&
+             data.shortDescription is string && data.shortDescription.size() <= 500 &&
+             data.purpose is string && data.purpose.size() <= 1000 &&
+             data.introduction is string && data.introduction.size() <= 8000 &&
+             isValidStringList(data.coversItems, 60) &&
+             isValidStringList(data.importantConcepts, 60) &&
+             isValidStringList(data.relatedTopics, 40) &&
+             data.personalNotes is string && data.personalNotes.size() <= 50000 &&
+             data.aiGeneratedInfo is string && data.aiGeneratedInfo.size() <= 50000 &&
+             data.sortOrder is int && data.sortOrder >= 0 && data.sortOrder <= 9999;
+    }
+
+    function isValidPage(data, userId) {
+      return data.userId == userId &&
+             data.notebookId is string && isValidId(data.notebookId) &&
+             (!('topicId' in data) || (data.topicId is string && isValidId(data.topicId))) &&
+             (!('subtopicId' in data) || (data.subtopicId is string && isValidId(data.subtopicId))) &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+             data.content is string && data.content.size() <= 200000 &&
+             data.pageNumber is int && data.pageNumber >= 1 && data.pageNumber <= 99999 &&
+             data.handwritingMode is bool &&
+             data.fontKey is string && data.fontKey.size() >= 1 && data.fontKey.size() <= 64 &&
+             data.fontSizeSp is int && data.fontSizeSp >= 10 && data.fontSizeSp <= 36 &&
+             data.inkColorHex is int &&
+             data.lineSpacingMultiplier is number && data.lineSpacingMultiplier >= 1.0 && data.lineSpacingMultiplier <= 3.0 &&
+             data.textAlignment in ['START', 'CENTER', 'END'] &&
+             data.bold is bool &&
+             data.italic is bool &&
+             data.paperColorKey in ['IVORY', 'CREAM', 'WHITE', 'SEPIA', 'MINT'] &&
+             data.aiNotes is string && data.aiNotes.size() <= 50000;
+    }
+
+    function isValidAttachment(data, userId) {
+      return data.userId == userId &&
+             data.notebookId is string && isValidId(data.notebookId) &&
+             (!('topicId' in data) || (data.topicId is string && isValidId(data.topicId))) &&
+             (!('pageId' in data) || (data.pageId is string && isValidId(data.pageId))) &&
+             data.fileName is string && data.fileName.size() >= 1 && data.fileName.size() <= 255 &&
+             data.fileType in ['IMAGE', 'SCREENSHOT', 'LINK', 'DOCUMENT'] &&
+             data.localUriOrPath is string && data.localUriOrPath.size() <= 2048 &&
+             data.caption is string && data.caption.size() <= 2000 &&
+             data.sourceLabel is string && data.sourceLabel.size() <= 120 &&
+             data.status in ['SAVED', 'NOT_STARTED', 'IN_PROGRESS', 'COMPLETED'] &&
+             data.priority in ['LOW', 'MEDIUM', 'HIGH'];
+    }
+
+    function isValidFitnessLog(data, userId) {
+      return data.userId == userId &&
+             data.notebookId is string && isValidId(data.notebookId) &&
+             data.exerciseName is string && data.exerciseName.size() >= 1 && data.exerciseName.size() <= 160 &&
+             data.muscleGroup is string && data.muscleGroup.size() <= 100 &&
+             data.sets is int && data.sets >= 1 && data.sets <= 100 &&
+             data.reps is string && data.reps.size() >= 1 && data.reps.size() <= 100 &&
+             data.weightKg is number && data.weightKg >= 0 && data.weightKg <= 2000 &&
+             data.rir is int && data.rir >= 0 && data.rir <= 10 &&
+             data.rpe is number && data.rpe >= 1 && data.rpe <= 10 &&
+             data.personalRecord is bool &&
+             data.notes is string && data.notes.size() <= 2000 &&
+             data.workoutDateMillis is int && data.workoutDateMillis >= 0;
+    }
+
+    function isValidVocabularyEntry(data, userId) {
+      return data.userId == userId &&
+             data.notebookId is string && isValidId(data.notebookId) &&
+             data.word is string && data.word.size() >= 1 && data.word.size() <= 120 &&
+             data.pronunciation is string && data.pronunciation.size() <= 120 &&
+             data.meaning is string && data.meaning.size() <= 2000 &&
+             data.hindiMeaning is string && data.hindiMeaning.size() <= 1000 &&
+             isValidStringList(data.synonyms, 25) &&
+             isValidStringList(data.antonyms, 25) &&
+             isValidStringList(data.exampleSentences, 20) &&
+             data.category is string && data.category.size() <= 120 &&
+             data.mastered is bool;
+    }
+
+    function isValidTodoTask(data, userId) {
+      return data.userId == userId &&
+             data.notebookId is string && isValidId(data.notebookId) &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 300 &&
+             data.description is string && data.description.size() <= 4000 &&
+             data.category in ['TODAY', 'TOMORROW', 'UPCOMING', 'PENDING', 'IMPORTANT', 'UNSCHEDULED'] &&
+             data.priority in ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] &&
+             data.completed is bool &&
+             (!('dueDateMillis' in data) || (data.dueDateMillis is int && data.dueDateMillis >= 0));
+    }
+
+    function isValidPreferences(data, userId) {
+      return data.userId == userId &&
+             data.customAppName is string && data.customAppName.size() >= 1 && data.customAppName.size() <= 40 &&
+             data.themeMode in ['SYSTEM', 'LIGHT', 'DARK'] &&
+             data.accentColorKey in ['FOREST', 'COBALT', 'TERRACOTTA', 'AMBER', 'PLUM', 'SLATE'] &&
+             data.uiFontKey is string && data.uiFontKey.size() >= 1 && data.uiFontKey.size() <= 64 &&
+             data.writingFontKey is string && data.writingFontKey.size() >= 1 && data.writingFontKey.size() <= 64 &&
+             data.handwritingFontKey is string && data.handwritingFontKey.size() >= 1 && data.handwritingFontKey.size() <= 64 &&
+             data.defaultFontSizeSp is int && data.defaultFontSizeSp >= 12 && data.defaultFontSizeSp <= 32 &&
+             data.paperColorKey in ['IVORY', 'CREAM', 'WHITE', 'SEPIA', 'MINT'] &&
+             data.ruledLineColorKey in ['BLUE', 'TEAL', 'SLATE', 'SEPIA'] &&
+             data.lineSpacingMultiplier is number && data.lineSpacingMultiplier >= 1.0 && data.lineSpacingMultiplier <= 3.0 &&
+             data.defaultCoverStyle in ['LEATHER', 'LINEN', 'SPIRAL', 'MINIMAL', 'CLASSIC'] &&
+             data.dashboardLayout in ['GRID', 'LIST'] &&
+             data.showArchivedOnDashboard is bool &&
+             data.preferredLanguage in ['ENGLISH', 'HINDI', 'MIXED'] &&
+             data.voiceInputLanguage is string && data.voiceInputLanguage.size() >= 2 && data.voiceInputLanguage.size() <= 20 &&
+             data.aiEnabled is bool &&
+             data.aiResponseLanguage in ['ENGLISH', 'HINDI', 'MIXED'];
+    }
+
+    match /users/{userId}/notebooks/{notebookId} {
+      allow get: if isOwner(userId) && isValidId(notebookId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(notebookId) &&
+                       incoming().keys().hasAll(['userId', 'notebookNumber', 'name', 'purpose', 'shortDescription', 'detailedDescription', 'iconKey', 'coverColorHex', 'coverStyle', 'sortOrder', 'pinned', 'archived', 'hidden', 'systemDefault', 'notebookType', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'notebookNumber', 'name', 'purpose', 'shortDescription', 'detailedDescription', 'iconKey', 'coverColorHex', 'coverStyle', 'sortOrder', 'pinned', 'archived', 'hidden', 'systemDefault', 'notebookType', 'lastOpenedAt', 'createdAt', 'updatedAt']) &&
+                       isValidNotebook(incoming(), userId) &&
+                       isValidTimestampsOnCreate(incoming());
+      allow update: if isOwner(userId) && isValidId(notebookId) &&
+                       incoming().userId == existing().userId &&
+                       isValidNotebook(incoming(), userId) &&
+                       isValidTimestampsOnUpdate(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['notebookNumber', 'name', 'purpose', 'shortDescription', 'detailedDescription', 'iconKey', 'coverColorHex', 'coverStyle', 'sortOrder', 'pinned', 'archived', 'hidden', 'lastOpenedAt', 'updatedAt']);
+      allow delete: if isOwner(userId) && isValidId(notebookId);
+    }
+
+    match /users/{userId}/topics/{topicId} {
+      allow get: if isOwner(userId) && isValidId(topicId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(topicId) &&
+                       incoming().keys().hasAll(['userId', 'notebookId', 'name', 'shortDescription', 'purpose', 'introduction', 'coversItems', 'importantConcepts', 'relatedTopics', 'personalNotes', 'personalObservations', 'personalExamples', 'aiGeneratedInfo', 'referenceLinks', 'iconKey', 'sortOrder', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'notebookId', 'name', 'shortDescription', 'purpose', 'introduction', 'coversItems', 'importantConcepts', 'relatedTopics', 'personalNotes', 'personalObservations', 'personalExamples', 'aiGeneratedInfo', 'referenceLinks', 'iconKey', 'sortOrder', 'createdAt', 'updatedAt']) &&
+                       isValidTopic(incoming(), userId) &&
+                       isValidTimestampsOnCreate(incoming());
+      allow update: if isOwner(userId) && isValidId(topicId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().notebookId == existing().notebookId &&
+                       isValidTopic(incoming(), userId) &&
+                       isValidTimestampsOnUpdate(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['name', 'shortDescription', 'purpose', 'introduction', 'coversItems', 'importantConcepts', 'relatedTopics', 'personalNotes', 'personalObservations', 'personalExamples', 'aiGeneratedInfo', 'referenceLinks', 'iconKey', 'sortOrder', 'updatedAt']);
+      allow delete: if isOwner(userId) && isValidId(topicId);
+    }
+
+    match /users/{userId}/subtopics/{subtopicId} {
+      allow get: if isOwner(userId) && isValidId(subtopicId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(subtopicId) &&
+                       incoming().keys().hasAll(['userId', 'notebookId', 'topicId', 'name', 'shortDescription', 'purpose', 'introduction', 'coversItems', 'importantConcepts', 'relatedTopics', 'personalNotes', 'aiGeneratedInfo', 'sortOrder', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'notebookId', 'topicId', 'name', 'shortDescription', 'purpose', 'introduction', 'coversItems', 'importantConcepts', 'relatedTopics', 'personalNotes', 'aiGeneratedInfo', 'sortOrder', 'createdAt', 'updatedAt']) &&
+                       isValidSubtopic(incoming(), userId) &&
+                       isValidTimestampsOnCreate(incoming());
+      allow update: if isOwner(userId) && isValidId(subtopicId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().notebookId == existing().notebookId &&
+                       incoming().topicId == existing().topicId &&
+                       isValidSubtopic(incoming(), userId) &&
+                       isValidTimestampsOnUpdate(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['name', 'shortDescription', 'purpose', 'introduction', 'coversItems', 'importantConcepts', 'relatedTopics', 'personalNotes', 'aiGeneratedInfo', 'sortOrder', 'updatedAt']);
+      allow delete: if isOwner(userId) && isValidId(subtopicId);
+    }
+
+    match /users/{userId}/pages/{pageId} {
+      allow get: if isOwner(userId) && isValidId(pageId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(pageId) &&
+                       incoming().keys().hasAll(['userId', 'notebookId', 'title', 'content', 'pageNumber', 'handwritingMode', 'fontKey', 'fontSizeSp', 'inkColorHex', 'lineSpacingMultiplier', 'textAlignment', 'bold', 'italic', 'paperColorKey', 'aiNotes', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'notebookId', 'topicId', 'subtopicId', 'title', 'content', 'pageNumber', 'handwritingMode', 'fontKey', 'fontSizeSp', 'inkColorHex', 'lineSpacingMultiplier', 'textAlignment', 'bold', 'italic', 'paperColorKey', 'aiNotes', 'createdAt', 'updatedAt']) &&
+                       isValidPage(incoming(), userId) &&
+                       isValidTimestampsOnCreate(incoming());
+      allow update: if isOwner(userId) && isValidId(pageId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().notebookId == existing().notebookId &&
+                       isValidPage(incoming(), userId) &&
+                       isValidTimestampsOnUpdate(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['topicId', 'subtopicId', 'title', 'content', 'pageNumber', 'handwritingMode', 'fontKey', 'fontSizeSp', 'inkColorHex', 'lineSpacingMultiplier', 'textAlignment', 'bold', 'italic', 'paperColorKey', 'aiNotes', 'updatedAt']);
+      allow delete: if isOwner(userId) && isValidId(pageId);
+    }
+
+    match /users/{userId}/attachments/{attachmentId} {
+      allow get: if isOwner(userId) && isValidId(attachmentId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(attachmentId) &&
+                       incoming().keys().hasAll(['userId', 'notebookId', 'fileName', 'fileType', 'localUriOrPath', 'caption', 'sourceLabel', 'status', 'priority', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'notebookId', 'topicId', 'pageId', 'fileName', 'fileType', 'localUriOrPath', 'caption', 'sourceLabel', 'status', 'priority', 'createdAt', 'updatedAt']) &&
+                       isValidAttachment(incoming(), userId) &&
+                       isValidTimestampsOnCreate(incoming());
+      allow update: if isOwner(userId) && isValidId(attachmentId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().notebookId == existing().notebookId &&
+                       isValidAttachment(incoming(), userId) &&
+                       isValidTimestampsOnUpdate(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['fileName', 'fileType', 'localUriOrPath', 'caption', 'sourceLabel', 'status', 'priority', 'updatedAt']);
+      allow delete: if isOwner(userId) && isValidId(attachmentId);
+    }
+
+    match /users/{userId}/fitnessLogs/{logId} {
+      allow get: if isOwner(userId) && isValidId(logId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(logId) &&
+                       incoming().keys().hasAll(['userId', 'notebookId', 'exerciseName', 'muscleGroup', 'sets', 'reps', 'weightKg', 'rir', 'rpe', 'personalRecord', 'notes', 'workoutDateMillis', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'notebookId', 'exerciseName', 'muscleGroup', 'sets', 'reps', 'weightKg', 'rir', 'rpe', 'personalRecord', 'notes', 'workoutDateMillis', 'createdAt', 'updatedAt']) &&
+                       isValidFitnessLog(incoming(), userId) &&
+                       isValidTimestampsOnCreate(incoming());
+      allow update: if isOwner(userId) && isValidId(logId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().notebookId == existing().notebookId &&
+                       isValidFitnessLog(incoming(), userId) &&
+                       isValidTimestampsOnUpdate(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['exerciseName', 'muscleGroup', 'sets', 'reps', 'weightKg', 'rir', 'rpe', 'personalRecord', 'notes', 'workoutDateMillis', 'updatedAt']);
+      allow delete: if isOwner(userId) && isValidId(logId);
+    }
+
+    match /users/{userId}/vocabulary/{entryId} {
+      allow get: if isOwner(userId) && isValidId(entryId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(entryId) &&
+                       incoming().keys().hasAll(['userId', 'notebookId', 'word', 'pronunciation', 'meaning', 'hindiMeaning', 'synonyms', 'antonyms', 'exampleSentences', 'category', 'mastered', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'notebookId', 'word', 'pronunciation', 'meaning', 'hindiMeaning', 'synonyms', 'antonyms', 'exampleSentences', 'category', 'mastered', 'createdAt', 'updatedAt']) &&
+                       isValidVocabularyEntry(incoming(), userId) &&
+                       isValidTimestampsOnCreate(incoming());
+      allow update: if isOwner(userId) && isValidId(entryId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().notebookId == existing().notebookId &&
+                       isValidVocabularyEntry(incoming(), userId) &&
+                       isValidTimestampsOnUpdate(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['word', 'pronunciation', 'meaning', 'hindiMeaning', 'synonyms', 'antonyms', 'exampleSentences', 'category', 'mastered', 'updatedAt']);
+      allow delete: if isOwner(userId) && isValidId(entryId);
+    }
+
+    match /users/{userId}/todos/{todoId} {
+      allow get: if isOwner(userId) && isValidId(todoId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(todoId) &&
+                       incoming().keys().hasAll(['userId', 'notebookId', 'title', 'description', 'category', 'priority', 'completed', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'notebookId', 'title', 'description', 'category', 'priority', 'completed', 'dueDateMillis', 'createdAt', 'updatedAt']) &&
+                       isValidTodoTask(incoming(), userId) &&
+                       isValidTimestampsOnCreate(incoming());
+      allow update: if isOwner(userId) && isValidId(todoId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().notebookId == existing().notebookId &&
+                       isValidTodoTask(incoming(), userId) &&
+                       isValidTimestampsOnUpdate(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'category', 'priority', 'completed', 'dueDateMillis', 'updatedAt']);
+      allow delete: if isOwner(userId) && isValidId(todoId);
+    }
+
+    match /users/{userId}/preferences/{prefId} {
+      allow get: if isOwner(userId) && isValidId(prefId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(prefId) &&
+                       incoming().keys().hasAll(['userId', 'customAppName', 'themeMode', 'accentColorKey', 'uiFontKey', 'writingFontKey', 'handwritingFontKey', 'defaultFontSizeSp', 'paperColorKey', 'ruledLineColorKey', 'lineSpacingMultiplier', 'defaultCoverStyle', 'dashboardLayout', 'showArchivedOnDashboard', 'preferredLanguage', 'voiceInputLanguage', 'aiEnabled', 'aiResponseLanguage', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'customAppName', 'themeMode', 'accentColorKey', 'uiFontKey', 'writingFontKey', 'handwritingFontKey', 'defaultFontSizeSp', 'paperColorKey', 'ruledLineColorKey', 'lineSpacingMultiplier', 'defaultCoverStyle', 'dashboardLayout', 'showArchivedOnDashboard', 'preferredLanguage', 'voiceInputLanguage', 'aiEnabled', 'aiResponseLanguage', 'createdAt', 'updatedAt']) &&
+                       isValidPreferences(incoming(), userId) &&
+                       isValidTimestampsOnCreate(incoming());
+      allow update: if isOwner(userId) && isValidId(prefId) &&
+                       incoming().userId == existing().userId &&
+                       isValidPreferences(incoming(), userId) &&
+                       isValidTimestampsOnUpdate(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['customAppName', 'themeMode', 'accentColorKey', 'uiFontKey', 'writingFontKey', 'handwritingFontKey', 'defaultFontSizeSp', 'paperColorKey', 'ruledLineColorKey', 'lineSpacingMultiplier', 'defaultCoverStyle', 'dashboardLayout', 'showArchivedOnDashboard', 'preferredLanguage', 'voiceInputLanguage', 'aiEnabled', 'aiResponseLanguage', 'updatedAt']);
+      allow delete: if isOwner(userId) && isValidId(prefId);
+    }
+  }
+}

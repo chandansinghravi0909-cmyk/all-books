@@ -1,0 +1,6 @@
+{
+  "name": "Knowledge Library",
+  "description": "Personal Knowledge & Notebook Library with 13 structured notebooks, topic information pages, A4 ruled writing paper, voice-to-text, and AI assistance.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
